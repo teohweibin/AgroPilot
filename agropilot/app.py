@@ -8,9 +8,7 @@ import streamlit as st
 import pandas as pd
 import pathlib
 from agent_configuration.agent import build_graph, QuoteState, _calculate_totals
-from mcp_architecture.mcp_agent import run_post_approval_agent
 from dotenv import load_dotenv
-from anyio import Path  
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -723,11 +721,11 @@ with st.container():
             "▶  RUN PIPELINE",
             type="primary",
             use_container_width=True,
-            disabled=not os.getenv("GOOGLE_API_KEY") or not rfq.strip(),
+            disabled=not rfq.strip(),
         )
     with col_status:
         if not os.getenv("GOOGLE_API_KEY"):
-            st.markdown("<div style='color:#f85149;font-size:13.5px;padding-top:10px;font-weight:600;'>⚠ GOOGLE_API_KEY missing in .env</div>", unsafe_allow_html=True)
+            st.markdown("<div style='color:#fbbf24;font-size:13.5px;padding-top:10px;font-weight:600;'>DEMO MODE · no API keys or external services are used</div>", unsafe_allow_html=True)
         elif st.session_state.pipeline_done:
             st.markdown("<div style='color:#7ee787;font-size:13.5px;padding-top:10px;font-weight:600;'>✓ Pipeline complete — scroll down to review and approve</div>", unsafe_allow_html=True)
 
@@ -1071,13 +1069,17 @@ if st.session_state.pipeline_done and st.session_state.final_state:
 
     col_a, col_b = st.columns(2)
     with col_a:
-        if st.button("✅  APPROVE & SUBMIT CONFIGURATION", type="primary", use_container_width=True):
+        demo_mode = os.getenv("AGROPILOT_DEMO_MODE", "").strip().lower() in {"1", "true", "yes", "on"}
+        live_dispatch_enabled = bool(os.getenv("GOOGLE_API_KEY")) and not demo_mode
+        if st.button("✅  APPROVE & SUBMIT CONFIGURATION", type="primary", use_container_width=True, disabled=not live_dispatch_enabled):
             with st.spinner("🤖 Agent dispatching downstream actions..."):
                 from mcp_architecture.mcp_agent import run_post_approval_agent
                 dispatch_result = run_post_approval_agent(st.session_state.final_state, max_iterations=20)
                 st.session_state.dispatch_result = dispatch_result
             st.session_state.approved = True
             st.rerun()
+        if not live_dispatch_enabled:
+            st.caption("Demo safety: downstream CRM, email, signature, and Slack actions are disabled.")
     with col_b:
         if st.button("✏️  EDIT RFQ", use_container_width=True):
             st.session_state.pipeline_done = False
