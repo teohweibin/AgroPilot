@@ -1,5 +1,25 @@
 # AgroPilot — Autonomous Sales Engineer (CPQ Agent Swarm) 🌾
 
+## Demo mode — no credentials required
+
+The app can be shown safely without connecting to Gemini, Gmail, Salesforce,
+DocuSign, Slack, or Tavily. Paste any RFQ, then select **RUN PIPELINE** to see a
+local illustrative configuration, audit, and quotation. Demo output is clearly
+labelled and the downstream approval action is disabled.
+
+```powershell
+cd agropilot
+Copy-Item config\.env.example config\.env
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+streamlit run app.py
+```
+
+To use live AI output later, set `AGROPILOT_DEMO_MODE=false` and replace the
+placeholder values in `config/.env` with real credentials. Keep external actions
+disabled until each integration has been tested in its sandbox.
+
 **AgroPilot** is an advanced multi-agent artificial intelligence platform engineered for automated Agricultural Equipment Configuration, Pricing, and Quotation (CPQ).
 
 Built for the **AI Marathon 2026** *(Problem Statement 1: The Autonomous Sales Engineer)*, AgroPilot ingests messy, unformatted, and unstructured inbound dealer or customer Request for Quote (RFQ) emails and orchestrates a stateful multi-agent swarm using **LangGraph** to construct an engineered, conflict-free Bill of Materials (BOM) and verified compliance audits within seconds. 

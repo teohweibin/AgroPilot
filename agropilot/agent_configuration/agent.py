@@ -2,7 +2,6 @@ import os, json, re, time
 import pathlib
 from datetime import datetime, timedelta
 from typing import TypedDict, Literal
-from anyio import Path
 from dotenv import load_dotenv
 
 from langgraph.graph import StateGraph, END
@@ -19,6 +18,95 @@ from agent_configuration.prompts import (
 )
 
 load_dotenv()
+
+
+def _demo_mode() -> bool:
+    """Return true when the app should use safe, deterministic demo data."""
+    configured = os.getenv("AGROPILOT_DEMO_MODE", "").strip().lower()
+    return configured in {"1", "true", "yes", "on"} or not os.getenv("GOOGLE_API_KEY")
+
+
+def _demo_parsed_rfq(rfq_email: str) -> dict:
+    """Provide a useful, local-only RFQ parse when no LLM is configured."""
+    text = rfq_email.lower()
+    country = "MY" if any(word in text for word in ("malaysia", "selangor", "johor", "kuala lumpur")) else "US"
+    currency = "RM " if country == "MY" else "$"
+    brand = "John Deere" if "john deere" in text else "AgroPilot Demo"
+    model = "7R 330" if "7r" in text or "tractor" in text else "Precision Field Package"
+    return {
+        "rfq_id": "AQ-DEMO-2026-001",
+        "dealer_company": "Demo Equipment Dealer",
+        "dealer_contact": "Demo Sales Team",
+        "dealer_email": "",
+        "farm_operator": "Demo Farm Operator",
+        "farm_location": "Malaysia" if country == "MY" else "United States",
+        "country_code": country,
+        "currency_symbol": currency,
+        "delivery_deadline": "Demo delivery window",
+        "budget_usd_min": 250000,
+        "budget_usd_max": 500000,
+        "equipment_category": "tractor",
+        "base_model_requested": model,
+        "oem_brand": brand,
+        "farming_operation": "row-crop",
+        "horsepower_required": 330,
+        "acreage": 1200,
+        "requirements": {
+            "engine": "330 hp diesel engine",
+            "transmission": "powershift transmission",
+            "hydraulics": "high-flow hydraulics",
+            "cab": "operator comfort cab",
+            "precision_tech": ["GPS guidance"],
+            "implements": ["precision planter"],
+            "other": [],
+        },
+        "compliance_needed": ["standard safety certification"],
+        "notes": "Generated locally for demonstration; verify specifications and pricing with an authorised dealer.",
+    }
+
+
+def _demo_bom(parsed: dict) -> list:
+    """Return transparent sample pricing for a clickable product demo."""
+    brand = parsed.get("oem_brand") or "AgroPilot Demo"
+    model = parsed.get("base_model_requested") or "Precision Field Package"
+    items = [
+        ("DEMO-BASE-330", "base_unit", f"{brand} {model} base unit", 320000),
+        ("DEMO-ENG-330", "engine", "330 hp emissions-compliant diesel engine", 0),
+        ("DEMO-TRANS-PS", "transmission", "Powershift transmission", 18000),
+        ("DEMO-HYD-HF", "hydraulics", "High-flow hydraulic package", 12500),
+        ("DEMO-CAB-COMFORT", "cab", "Climate-controlled operator comfort cab", 8500),
+        ("DEMO-GPS-GUIDE", "precision_tech", "GPS guidance and field mapping package", 14500),
+        ("DEMO-PLANTER", "implement", "Precision planter integration kit", 22500),
+    ]
+    return [
+        {
+            "sku": sku,
+            "component_type": component_type,
+            "description": description,
+            "qty": 1,
+            "unit_price_usd": price,
+            "line_total_usd": price,
+            "status": "DRAFT",
+            "compatibility_note": "Demo configuration — dealer validation required.",
+            "reasoning": "Illustrative demo item; not a live OEM quote.",
+            "product_url": None,
+        }
+        for sku, component_type, description, price in items
+    ]
+
+
+def _demo_sentinel() -> dict:
+    return {
+        "win_probability_pct": 78,
+        "win_level": "HIGH",
+        "gross_margin_pct": 28.0,
+        "margin_vs_floor_pts": 8.0,
+        "discount_risk": "LOW",
+        "recommendation": "APPROVE AS-IS",
+        "deal_rationale": "This configuration covers the core fieldwork requirements in the request. Confirm the final options and delivery date with the dealer before placing an order.",
+        "upsell_opportunity": "Extended service package — illustrative demo recommendation.",
+        "sentinel_flag": "Demo-only estimates; no live inventory or compliance check was performed.",
+    }
 
 # ─────────────────────────────────────────────────────────────────────────────
 # SHARED STATE
@@ -183,10 +271,10 @@ def _calculate_totals(bom: list, tax_rate: float = 0.07) -> dict:
 
 def _call(system: str, user: str) -> str:
     BASE_DIR = pathlib.Path(__file__).resolve().parent
-    ENV_PATH = BASE_DIR / "config" / ".env"
+    ENV_PATH = BASE_DIR.parent / "config" / ".env"
     load_dotenv(dotenv_path=ENV_PATH)
     key = os.getenv("GOOGLE_API_KEY") 
-    if not key:
+    if _demo_mode() or not key:
         return "__FALLBACK_TRIGGERED__"
     
     delays = [90]
@@ -248,7 +336,7 @@ def node_parse(state: QuoteState) -> dict:
     
     email_text = state['rfq_email'].lower()
     
-    fallback_parse = {}
+    fallback_parse = _demo_parsed_rfq(state["rfq_email"])
     
     parsed = _parse_json(raw, fallback_parse)
     
@@ -265,7 +353,8 @@ def node_parse(state: QuoteState) -> dict:
         cc = parsed.get("country_code", "US").upper()
         parsed["currency_symbol"] = "RM " if cc == "MY" else ("AU$" if cc == "AU" else "$")
 
-    logs = _log(state, "SYSTEM", f"Stage 1 — RFQ parsed: {parsed.get('oem_brand','John Deere')} {parsed.get('base_model_requested','7R 330')} successfully mapping regional parameters.", "success")
+    source = "DEMO MODE — local sample data" if raw == "__FALLBACK_TRIGGERED__" else "live model extraction"
+    logs = _log(state, "SYSTEM", f"Stage 1 — RFQ parsed: {parsed.get('oem_brand','John Deere')} {parsed.get('base_model_requested','7R 330')} ({source}).", "success")
 
     return {
         "parsed_rfq":         parsed,
@@ -303,7 +392,7 @@ def node_configurator(state: QuoteState) -> dict:
 
     user_msg = f"Build BOM array matching context:\n{json.dumps(parsed)}\n{compliance_rules}\n{compat_check}\n{product_data}\n{objection_block}"
     
-    fallback_bom = []
+    fallback_bom = _demo_bom(parsed)
     
     raw = _call(CONFIGURATOR_SYSTEM, user_msg)
     bom = _parse_json(raw, fallback_bom)
@@ -372,7 +461,7 @@ def node_sentinel(state: QuoteState) -> dict:
     brand = parsed.get("oem_brand", "John Deere")
     country = parsed.get("country_code", "US").lower()
     
-    fallback_sentinel = {}
+    fallback_sentinel = _demo_sentinel()
     
     raw = _call(SENTINEL_SYSTEM, f"Analyse Deal: {json.dumps(state['bom'])}")
     sentinel = _parse_json(raw, fallback_sentinel)

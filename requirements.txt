@@ -1,0 +1,2 @@
+# Streamlit Community Cloud installs dependencies from the repository root.
+-r agropilot/requirements.txt
