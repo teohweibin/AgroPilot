@@ -94,6 +94,21 @@ def gmail_fetch_latest_rfq(query: str, token_path: str) -> dict:
         "body": body_text,
     }
 
+
+DEMO_RFQ = """FROM: Sarah Lim <sarah.lim@greenfields-demo.example>
+SUBJECT: RFQ — 330 HP precision tractor package for Johor farm
+
+Hello AgroPilot team,
+
+GreenFields Farm is expanding its maize operation in Johor, Malaysia. Please prepare a quote for a 330 HP tractor with high-flow hydraulics, an operator comfort cab, GPS guidance, and a precision planter integration kit.
+
+We operate 1,200 acres and need delivery before the next planting window. Please include an itemised configuration, a compatibility review, and the total estimated cost.
+
+Regards,
+Sarah Lim
+Farm Operations Manager
+"""
+
 # ─────────────────────────────────────────────────────────────────────────────
 # PAGE CONFIG
 # ─────────────────────────────────────────────────────────────────────────────
@@ -670,6 +685,13 @@ with st.container():
     if "rfq_text" not in st.session_state:
         st.session_state.rfq_text = ""
 
+    if st.button("⚡ TRY SAMPLE RFQ", type="primary", use_container_width=True):
+        st.session_state.rfq_text = DEMO_RFQ
+        st.session_state.run_sample_rfq = True
+        st.rerun()
+
+    st.caption("Instant demo: runs a realistic sample RFQ locally. No account, API key, or external action is required.")
+
     with st.expander("📥 Load RFQ from Gmail inbox", expanded=False):
         st.markdown(
             "<div style='color:#94a3b8;font-size:13px;margin-bottom:10px'>"
@@ -723,6 +745,8 @@ with st.container():
             use_container_width=True,
             disabled=not rfq.strip(),
         )
+        if st.session_state.pop("run_sample_rfq", False):
+            run_clicked = True
     with col_status:
         if not os.getenv("GOOGLE_API_KEY"):
             st.markdown("<div style='color:#fbbf24;font-size:13.5px;padding-top:10px;font-weight:600;'>DEMO MODE · no API keys or external services are used</div>", unsafe_allow_html=True)
