@@ -6,7 +6,7 @@ The app can be shown safely without connecting to Gemini, Gmail, Salesforce,
 DocuSign, Slack, or Tavily. Select **TRY SAMPLE RFQ** for a one-click guided
 experience, or paste any RFQ and select **RUN PIPELINE** to see a local
 illustrative configuration, audit, and quotation. Demo output is clearly labelled
-and the downstream approval action is disabled.
+and **Approve & Simulate Submission** shows a safe, fake downstream success flow.
 
 ```powershell
 cd agropilot

@@ -593,6 +593,7 @@ if st.session_state.get("approved") and st.session_state.final_state:
     audit   = fs.get("compliance", {})
     blocking = [o for o in audit.get("objections", []) if o.get("severity") == "BLOCKING"]
     dispatch = st.session_state.get("dispatch_result", {})
+    is_simulated = dispatch.get("simulated", False)
 
     raw_location = parsed.get('farm_location') or 'Story County, Iowa, USA'
     location_parts = raw_location.split(',')
@@ -625,7 +626,7 @@ if st.session_state.get("approved") and st.session_state.final_state:
     st.markdown(f"""
     <div class="completion-screen">
       <div class="completion-check">✓</div>
-      <div class="completion-title">Quote Sent. Deal in Motion.</div>
+      <div class="completion-title">{"Demo Complete. Simulated Deal Flow." if is_simulated else "Quote Sent. Deal in Motion."}</div>
       <div class="completion-sub">
         Total elapsed agent time: <span class="green">{fmt_time(elapsed)}</span>
         &nbsp;|&nbsp; Manual equivalent: <span class="red">9 days</span>
@@ -1095,15 +1096,30 @@ if st.session_state.pipeline_done and st.session_state.final_state:
     with col_a:
         demo_mode = os.getenv("AGROPILOT_DEMO_MODE", "").strip().lower() in {"1", "true", "yes", "on"}
         live_dispatch_enabled = bool(os.getenv("GOOGLE_API_KEY")) and not demo_mode
-        if st.button("✅  APPROVE & SUBMIT CONFIGURATION", type="primary", use_container_width=True, disabled=not live_dispatch_enabled):
-            with st.spinner("🤖 Agent dispatching downstream actions..."):
-                from mcp_architecture.mcp_agent import run_post_approval_agent
-                dispatch_result = run_post_approval_agent(st.session_state.final_state, max_iterations=20)
-                st.session_state.dispatch_result = dispatch_result
-            st.session_state.approved = True
-            st.rerun()
-        if not live_dispatch_enabled:
-            st.caption("Demo safety: downstream CRM, email, signature, and Slack actions are disabled.")
+        if live_dispatch_enabled:
+            if st.button("✅  APPROVE & SUBMIT CONFIGURATION", type="primary", use_container_width=True):
+                with st.spinner("🤖 Agent dispatching downstream actions..."):
+                    from mcp_architecture.mcp_agent import run_post_approval_agent
+                    dispatch_result = run_post_approval_agent(st.session_state.final_state, max_iterations=20)
+                    st.session_state.dispatch_result = dispatch_result
+                st.session_state.approved = True
+                st.rerun()
+        else:
+            if st.button("✅  APPROVE & SIMULATE SUBMISSION", type="primary", use_container_width=True):
+                st.session_state.dispatch_result = {
+                    "simulated": True,
+                    "actions_completed": [
+                        "salesforce_create_opportunity (simulated)",
+                        "docusign_send_envelope (simulated)",
+                        "slack_notify_manager (simulated)",
+                        "gmail_send_quote (simulated)",
+                    ],
+                    "actions_failed": [],
+                    "summary": "Demo simulation only — no CRM record, email, signature request, or Slack message was created.",
+                }
+                st.session_state.approved = True
+                st.rerun()
+            st.caption("Demo safety: the success screen is simulated; no external system is contacted.")
     with col_b:
         if st.button("✏️  EDIT RFQ", use_container_width=True):
             st.session_state.pipeline_done = False
