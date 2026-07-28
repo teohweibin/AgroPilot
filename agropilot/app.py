@@ -5,7 +5,6 @@ Run: streamlit run app.py
 
 import os, time, queue, threading
 import streamlit as st
-import streamlit.components.v1 as components
 import pandas as pd
 import pathlib
 from agent_configuration.agent import build_graph, QuoteState, _calculate_totals
@@ -437,12 +436,22 @@ if "app_screen" not in st.session_state:
 
 
 def render_landing_page() -> None:
-    """Render the approved standalone landing page inside the Streamlit app."""
+    """Render the approved landing page directly in Streamlit, without an iframe."""
     asset_dir = pathlib.Path(__file__).resolve().parent / "landing_assets"
     html = (asset_dir / "index.html").read_text(encoding="utf-8")
     css = (asset_dir / "agropilot.css").read_text(encoding="utf-8")
-    js = (asset_dir / "agropilot.js").read_text(encoding="utf-8")
-    components.html(f"<style>{css}</style>{html}<script>{js}</script>", height=3900, scrolling=True)
+    css += """
+    [data-testid="stAppViewContainer"], [data-testid="stMain"] { background: #090b19 !important; }
+    [data-testid="stMainBlockContainer"] { max-width: none !important; padding: 0 !important; }
+    .landing-page { overflow: hidden; }
+    .landing-page main > section, .landing-page .problem-card, .landing-page .flow-card, .landing-page .value__grid article {
+      animation: landing-reveal .72s ease both;
+    }
+    .landing-page .problem-card { animation-delay: .08s; }
+    .landing-page .flow-card { animation-delay: .12s; }
+    @keyframes landing-reveal { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: none; } }
+    """
+    st.markdown(f"<style>{css}</style><div class='landing-page'>{html}</div>", unsafe_allow_html=True)
 
 
 if st.query_params.get("demo") == "1" and not st.session_state.get("sample_launch_handled"):
