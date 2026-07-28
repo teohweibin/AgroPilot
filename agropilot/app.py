@@ -444,6 +444,20 @@ def render_landing_page() -> None:
     [data-testid="stAppViewContainer"], [data-testid="stMain"] { background: #090b19 !important; }
     [data-testid="stMainBlockContainer"] { max-width: none !important; padding: 0 !important; }
     .landing-page { overflow: hidden; }
+    .landing-page, .landing-page * { box-sizing: border-box; }
+    .landing-page h1, .landing-page h2, .landing-page h3, .landing-page p, .landing-page a, .landing-page button {
+      font-family: var(--sans) !important;
+    }
+    .landing-page .hero h1 { font-size: clamp(43px, 5.1vw, 72px) !important; font-weight: 800 !important; line-height: 1.12 !important; letter-spacing: -.028em !important; }
+    .landing-page .section-intro h2, .landing-page .demo h2 { font-weight: 800 !important; }
+    .landing-page .eyebrow, .landing-page .console__top, .landing-page .pipeline__step, .landing-page .console__metrics small, .landing-page .problem-card span, .landing-page .flow-card__number {
+      font-family: var(--mono) !important;
+    }
+    .landing-page a, .landing-page a:visited { text-decoration: none !important; }
+    .landing-page .button.button--primary, .landing-page .button.button--primary:visited { color: #15182f !important; }
+    .landing-page .button.button--ghost, .landing-page .button.button--ghost:visited { color: var(--text) !important; }
+    .landing-page .nav__cta, .landing-page .nav__cta:visited { color: #ccd1fb !important; }
+    .landing-page .brand, .landing-page .brand:visited { color: var(--text) !important; }
     .landing-page main > section, .landing-page .problem-card, .landing-page .flow-card, .landing-page .value__grid article {
       animation: landing-reveal .72s ease both;
     }
