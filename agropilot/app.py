@@ -5,6 +5,7 @@ Run: streamlit run app.py
 
 import os, time, queue, threading
 import streamlit as st
+import streamlit.components.v1 as components
 import pandas as pd
 import pathlib
 from agent_configuration.agent import build_graph, QuoteState, _calculate_totals
@@ -436,63 +437,19 @@ if "app_screen" not in st.session_state:
 
 
 def render_landing_page() -> None:
-    """Render the public first-visit experience inside the deployed app."""
-    st.markdown("""
-    <main class="landing-shell">
-      <section class="landing-hero">
-        <div class="landing-kicker">AGROPILOT / AI-ASSISTED EQUIPMENT SALES</div>
-        <h1 class="landing-title">Turn an agricultural RFQ into a <span>confident next step.</span></h1>
-        <p class="landing-copy">AgroPilot helps equipment-sales teams turn a customer request into a compatible configuration, a reviewed quote, and a clear approval decision—without stitching together emails, spreadsheets, and checks by hand.</p>
-        <div class="landing-mark">AP</div>
-      </section>
-    </main>
-    """, unsafe_allow_html=True)
+    """Render the approved standalone landing page inside the Streamlit app."""
+    asset_dir = pathlib.Path(__file__).resolve().parent / "landing_assets"
+    html = (asset_dir / "index.html").read_text(encoding="utf-8")
+    css = (asset_dir / "agropilot.css").read_text(encoding="utf-8")
+    js = (asset_dir / "agropilot.js").read_text(encoding="utf-8")
+    components.html(f"<style>{css}</style>{html}<script>{js}</script>", height=3900, scrolling=True)
 
-    st.markdown("<div class='landing-shell landing-section'><div class='landing-eyebrow'>THE REAL-LIFE PROBLEM</div><h2 class='landing-heading'>Complex requests slow down good deals.</h2></div>", unsafe_allow_html=True)
-    problems = [
-        ("Scattered details", "RFQs arrive as unstructured messages, leaving important requirements buried in email threads."),
-        ("Configuration risk", "A promising tractor package can fail on compatibility, capacity, or regional requirements."),
-        ("Slow approvals", "Sales, engineering, and compliance hand-offs delay the quote while the customer waits."),
-    ]
-    cols = st.columns(3)
-    for col, (title, copy) in zip(cols, problems):
-        with col:
-            st.markdown(f"<div class='landing-card'><div class='landing-step'>CHALLENGE</div><h3>{title}</h3><p>{copy}</p></div>", unsafe_allow_html=True)
 
-    st.markdown("<div class='landing-shell landing-section'><div class='landing-eyebrow'>HOW IT WORKS</div><h2 class='landing-heading'>A guided workflow from request to decision.</h2></div>", unsafe_allow_html=True)
-    steps = [
-        ("01", "Read the RFQ", "Extract the farm, equipment, timing, and operating requirements."),
-        ("02", "Build a configuration", "Match the request with a practical equipment package and estimate."),
-        ("03", "Review the risks", "Check compatibility and surface issues before a customer sees the quote."),
-        ("04", "Approve the outcome", "Review the result, then simulate the downstream submission flow."),
-    ]
-    cols = st.columns(4)
-    for col, (num, title, copy) in zip(cols, steps):
-        with col:
-            st.markdown(f"<div class='landing-card'><div class='landing-step'>{num}</div><h3>{title}</h3><p>{copy}</p></div>", unsafe_allow_html=True)
-
-    st.markdown("<div class='landing-shell landing-section'><div class='landing-eyebrow'>BUSINESS VALUE</div><h2 class='landing-heading'>Faster, more consistent quote decisions.</h2></div>", unsafe_allow_html=True)
-    values = [
-        ("Less rework", "Catch incompatible options before they become a customer-facing problem."),
-        ("Clearer hand-offs", "Give sales and reviewers one structured view of the request, quote, and audit."),
-        ("Safer demonstrations", "Explore a realistic workflow with sample data and no connected accounts."),
-    ]
-    cols = st.columns(3)
-    for col, (title, copy) in zip(cols, values):
-        with col:
-            st.markdown(f"<div class='landing-card'><div class='landing-value'>{title}</div><p>{copy}</p></div>", unsafe_allow_html=True)
-
-    st.markdown("<div class='landing-shell landing-section'><div class='landing-eyebrow'>INTERACTIVE DEMO</div><h2 class='landing-heading'>Try a realistic agricultural equipment request.</h2></div>", unsafe_allow_html=True)
-    cta_col, note_col = st.columns([1, 2])
-    with cta_col:
-        if st.button("Try the sample RFQ  →", type="primary", use_container_width=True):
-            st.session_state.app_screen = "product"
-            st.session_state.rfq_text = DEMO_RFQ
-            st.session_state.run_sample_rfq = True
-            st.rerun()
-    with note_col:
-        st.markdown("<p class='landing-note'>The demo uses a pre-built sample RFQ. No login, API key, inbox, CRM, or external service is required.</p>", unsafe_allow_html=True)
-
+if st.query_params.get("demo") == "1" and not st.session_state.get("sample_launch_handled"):
+    st.session_state.app_screen = "product"
+    st.session_state.rfq_text = DEMO_RFQ
+    st.session_state.run_sample_rfq = True
+    st.session_state.sample_launch_handled = True
 
 if st.session_state.app_screen == "landing":
     render_landing_page()
