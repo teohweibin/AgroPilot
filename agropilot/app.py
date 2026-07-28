@@ -443,7 +443,7 @@ def render_landing_page() -> None:
     css += """
     [data-testid="stAppViewContainer"], [data-testid="stMain"] { background: #090b19 !important; }
     [data-testid="stMainBlockContainer"] { max-width: none !important; padding: 0 !important; }
-    .landing-page { overflow: hidden; }
+    .landing-page { overflow: visible; }
     .landing-page, .landing-page * { box-sizing: border-box; }
     .landing-page h1, .landing-page h2, .landing-page h3, .landing-page p, .landing-page a, .landing-page button {
       font-family: var(--sans) !important;
@@ -458,12 +458,32 @@ def render_landing_page() -> None:
     .landing-page .button.button--ghost, .landing-page .button.button--ghost:visited { color: var(--text) !important; }
     .landing-page .nav__cta, .landing-page .nav__cta:visited { color: #ccd1fb !important; }
     .landing-page .brand, .landing-page .brand:visited { color: var(--text) !important; }
-    .landing-page main > section, .landing-page .problem-card, .landing-page .flow-card, .landing-page .value__grid article {
-      animation: landing-reveal .72s ease both;
+    .landing-page .nav {
+      position: sticky !important; top: 0; z-index: 50; max-width: none;
+      padding-left: max(28px, calc((100vw - var(--max)) / 2 + 28px));
+      padding-right: max(28px, calc((100vw - var(--max)) / 2 + 28px));
+      background: rgba(9, 11, 25, .94); backdrop-filter: blur(14px);
+      border-bottom: 1px solid transparent; transition: border-color .25s ease;
     }
-    .landing-page .problem-card { animation-delay: .08s; }
-    .landing-page .flow-card { animation-delay: .12s; }
-    @keyframes landing-reveal { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: none; } }
+    .landing-page .nav:hover { border-bottom-color: var(--line); }
+    @keyframes landing-scroll-reveal {
+      0% { opacity: 0; transform: translateY(30px); }
+      18%, 78% { opacity: 1; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(-24px); }
+    }
+    @supports (animation-timeline: view()) {
+      .landing-page main > section, .landing-page .problem-card, .landing-page .flow-card, .landing-page .value__grid article {
+        animation: landing-scroll-reveal linear both;
+        animation-timeline: view(); animation-range: entry 0% exit 100%;
+      }
+    }
+    @supports not (animation-timeline: view()) {
+      .landing-page main > section, .landing-page .problem-card, .landing-page .flow-card, .landing-page .value__grid article {
+        animation: landing-load-reveal .72s ease both;
+      }
+      @keyframes landing-load-reveal { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: none; } }
+    }
+    @media (max-width: 600px) { .landing-page .nav { padding-left: 20px; padding-right: 20px; } }
     """
     st.markdown(f"<style>{css}</style><div class='landing-page'>{html}</div>", unsafe_allow_html=True)
 
