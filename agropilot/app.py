@@ -114,7 +114,7 @@ Farm Operations Manager
 # ─────────────────────────────────────────────────────────────────────────────
 
 st.set_page_config(
-    page_title="AgriQuote — Autonomous Sales Engineer",
+    page_title="AgroPilot — AI Sales Workflow",
     page_icon="🌾",
     layout="wide",
     initial_sidebar_state="collapsed",
@@ -391,6 +391,31 @@ st.markdown("""
     color: #cbd5e1 !important;
     font-size: 13.5px !important;
   }
+
+  .landing-shell { max-width: 1180px; margin: 28px auto 0; }
+  .landing-hero {
+    position: relative; overflow: hidden; padding: 72px 64px; border-radius: 20px;
+    border: 1px solid #35336a; background:
+      radial-gradient(circle at 82% 22%, rgba(121, 110, 246, .25), transparent 29%),
+      linear-gradient(135deg, #171936, #0b1021 64%);
+    box-shadow: 0 22px 60px rgba(0,0,0,.28);
+  }
+  .landing-kicker { color: #b5b7ff; font: 700 12px 'JetBrains Mono', monospace; letter-spacing: .16em; }
+  .landing-title { max-width: 800px; margin: 20px 0 18px; color: #f8fafc; font-size: clamp(42px, 6vw, 76px); font-weight: 900; line-height: 1.04; letter-spacing: -.055em; }
+  .landing-title span { color: #a9a6ff; }
+  .landing-copy { max-width: 660px; color: #c6cad9; font-size: 17px; line-height: 1.75; letter-spacing: .012em; }
+  .landing-mark { position: absolute; right: -25px; bottom: -70px; color: #a9a6ff; opacity: .07; font-size: 290px; font-weight: 900; letter-spacing: -.15em; }
+  .landing-section { margin: 56px 0; }
+  .landing-eyebrow { color: #a9a6ff; font: 700 12px 'JetBrains Mono', monospace; letter-spacing: .14em; }
+  .landing-heading { color: #f8fafc; margin: 12px 0 28px; font-size: 32px; letter-spacing: -.035em; }
+  .landing-card { height: 100%; padding: 25px; border: 1px solid #29304d; border-radius: 14px; background: #0b1121; }
+  .landing-card h3 { color: #f8fafc; font-size: 18px; margin: 12px 0 8px; }
+  .landing-card p { color: #aeb7ca; font-size: 14px; line-height: 1.65; }
+  .landing-step { color: #aaa7ff; font: 700 12px 'JetBrains Mono', monospace; letter-spacing: .1em; }
+  .landing-value { color: #a9a6ff; font-size: 26px; font-weight: 800; margin-bottom: 8px; }
+  .landing-note { color: #9ea9c3; font-size: 13px; margin: 18px 0 0; }
+  div[data-testid="stButton"] button[kind="primary"] { background: #a9a6ff !important; color: #0b1021 !important; border-color: #a9a6ff !important; }
+  @media (max-width: 720px) { .landing-hero { padding: 48px 28px; } .landing-title { font-size: 46px; } }
 </style>
 """, unsafe_allow_html=True)
 
@@ -406,6 +431,72 @@ if "elapsed"       not in st.session_state:
     st.session_state.elapsed       = 0
 if "all_logs"      not in st.session_state:
     st.session_state.all_logs      = []
+if "app_screen" not in st.session_state:
+    st.session_state.app_screen = "landing"
+
+
+def render_landing_page() -> None:
+    """Render the public first-visit experience inside the deployed app."""
+    st.markdown("""
+    <main class="landing-shell">
+      <section class="landing-hero">
+        <div class="landing-kicker">AGROPILOT / AI-ASSISTED EQUIPMENT SALES</div>
+        <h1 class="landing-title">Turn an agricultural RFQ into a <span>confident next step.</span></h1>
+        <p class="landing-copy">AgroPilot helps equipment-sales teams turn a customer request into a compatible configuration, a reviewed quote, and a clear approval decision—without stitching together emails, spreadsheets, and checks by hand.</p>
+        <div class="landing-mark">AP</div>
+      </section>
+    </main>
+    """, unsafe_allow_html=True)
+
+    st.markdown("<div class='landing-shell landing-section'><div class='landing-eyebrow'>THE REAL-LIFE PROBLEM</div><h2 class='landing-heading'>Complex requests slow down good deals.</h2></div>", unsafe_allow_html=True)
+    problems = [
+        ("Scattered details", "RFQs arrive as unstructured messages, leaving important requirements buried in email threads."),
+        ("Configuration risk", "A promising tractor package can fail on compatibility, capacity, or regional requirements."),
+        ("Slow approvals", "Sales, engineering, and compliance hand-offs delay the quote while the customer waits."),
+    ]
+    cols = st.columns(3)
+    for col, (title, copy) in zip(cols, problems):
+        with col:
+            st.markdown(f"<div class='landing-card'><div class='landing-step'>CHALLENGE</div><h3>{title}</h3><p>{copy}</p></div>", unsafe_allow_html=True)
+
+    st.markdown("<div class='landing-shell landing-section'><div class='landing-eyebrow'>HOW IT WORKS</div><h2 class='landing-heading'>A guided workflow from request to decision.</h2></div>", unsafe_allow_html=True)
+    steps = [
+        ("01", "Read the RFQ", "Extract the farm, equipment, timing, and operating requirements."),
+        ("02", "Build a configuration", "Match the request with a practical equipment package and estimate."),
+        ("03", "Review the risks", "Check compatibility and surface issues before a customer sees the quote."),
+        ("04", "Approve the outcome", "Review the result, then simulate the downstream submission flow."),
+    ]
+    cols = st.columns(4)
+    for col, (num, title, copy) in zip(cols, steps):
+        with col:
+            st.markdown(f"<div class='landing-card'><div class='landing-step'>{num}</div><h3>{title}</h3><p>{copy}</p></div>", unsafe_allow_html=True)
+
+    st.markdown("<div class='landing-shell landing-section'><div class='landing-eyebrow'>BUSINESS VALUE</div><h2 class='landing-heading'>Faster, more consistent quote decisions.</h2></div>", unsafe_allow_html=True)
+    values = [
+        ("Less rework", "Catch incompatible options before they become a customer-facing problem."),
+        ("Clearer hand-offs", "Give sales and reviewers one structured view of the request, quote, and audit."),
+        ("Safer demonstrations", "Explore a realistic workflow with sample data and no connected accounts."),
+    ]
+    cols = st.columns(3)
+    for col, (title, copy) in zip(cols, values):
+        with col:
+            st.markdown(f"<div class='landing-card'><div class='landing-value'>{title}</div><p>{copy}</p></div>", unsafe_allow_html=True)
+
+    st.markdown("<div class='landing-shell landing-section'><div class='landing-eyebrow'>INTERACTIVE DEMO</div><h2 class='landing-heading'>Try a realistic agricultural equipment request.</h2></div>", unsafe_allow_html=True)
+    cta_col, note_col = st.columns([1, 2])
+    with cta_col:
+        if st.button("Try the sample RFQ  →", type="primary", use_container_width=True):
+            st.session_state.app_screen = "product"
+            st.session_state.rfq_text = DEMO_RFQ
+            st.session_state.run_sample_rfq = True
+            st.rerun()
+    with note_col:
+        st.markdown("<p class='landing-note'>The demo uses a pre-built sample RFQ. No login, API key, inbox, CRM, or external service is required.</p>", unsafe_allow_html=True)
+
+
+if st.session_state.app_screen == "landing":
+    render_landing_page()
+    st.stop()
 
 # ─────────────────────────────────────────────────────────────────────────────
 # HELPERS
